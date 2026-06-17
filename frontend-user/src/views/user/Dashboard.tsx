@@ -230,19 +230,13 @@ export default function UserDashboard() {
       ) : (
         <div className="wallet-grid">
           {wallets.map((wallet, idx) => (
-            <div className="wallet-card" key={wallet.id}>
+            <div className={`wallet-card${wallet.isPrimary ? ' wallet-card--primary' : ''}`} key={wallet.id}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span className="wallet-card__currency">Wallet #{idx + 1}</span>
                 {wallet.isPrimary && (
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                    color: '#3b82f6',
-                    border: '1px solid rgba(59, 130, 246, 0.3)'
-                  }}>Primary</span>
+                  <span className="wallet-card__primary-badge">
+                    ★ Primary
+                  </span>
                 )}
               </div>
               <div className="wallet-card__balance">
