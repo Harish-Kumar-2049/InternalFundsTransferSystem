@@ -146,6 +146,16 @@ public class TransactionService {
         walletService.debit(original.getTargetWallet().getId(), original.getAmount());
         walletService.credit(original.getSourceWallet().getId(), original.getAmount());
 
+        // Record ledger entries for the refund (reverse of original)
+        BigDecimal targetBalAfter = walletRepository.findById(original.getTargetWallet().getId())
+                .map(w -> w.getBalance()).orElse(BigDecimal.ZERO);
+        BigDecimal sourceBalAfter = walletRepository.findById(original.getSourceWallet().getId())
+                .map(w -> w.getBalance()).orElse(BigDecimal.ZERO);
+        ledgerService.recordDebit(original.getTargetWallet().getId(), original.getId(),
+                original.getAmount(), targetBalAfter);
+        ledgerService.recordCredit(original.getSourceWallet().getId(), original.getId(),
+                original.getAmount(), sourceBalAfter);
+
         original.setStatus(TransactionStatus.REFUNDED);
         original.setRefundReason(request.getReason());
         transactionRepository.save(original);
@@ -162,6 +172,14 @@ public class TransactionService {
         Transaction txn = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
         return mapToResponse(txn);
+    }
+
+    public List<TransactionResponse> getAllTransactions() {
+        return transactionRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private TransactionResponse mapToResponse(Transaction txn) {

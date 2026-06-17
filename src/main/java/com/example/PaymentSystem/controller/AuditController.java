@@ -1,6 +1,6 @@
 package com.example.PaymentSystem.controller;
 
-import com.example.PaymentSystem.entity.AuditLog;
+import com.example.PaymentSystem.dto.response.AuditLogResponse;
 import com.example.PaymentSystem.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +20,15 @@ public class AuditController {
     private final AuditLogService auditLogService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AuditLog>> getUserLogs(
+    public ResponseEntity<List<AuditLogResponse>> getUserLogs(
             @PathVariable UUID userId) {
-        return ResponseEntity.ok(
-                auditLogService.getLogsByUser(userId));
+        return ResponseEntity.ok(auditLogService.getLogsByUser(userId));
     }
 
     @GetMapping("/transaction/{transactionId}")
-    public ResponseEntity<List<AuditLog>> getTransactionLogs(
+    public ResponseEntity<List<AuditLogResponse>> getTransactionLogs(
             @PathVariable UUID transactionId) {
-        return ResponseEntity.ok(
-                auditLogService.getLogsByTransaction(transactionId));
+        return ResponseEntity.ok(auditLogService.getLogsByTransaction(transactionId));
     }
 }
 

@@ -1,9 +1,13 @@
 package com.example.PaymentSystem.controller;
 
+import com.example.PaymentSystem.dto.response.AuditLogResponse;
 import com.example.PaymentSystem.dto.response.LedgerEntryResponse;
 import com.example.PaymentSystem.dto.response.ReconcileEntryResponse;
+import com.example.PaymentSystem.dto.response.TransactionResponse;
 import com.example.PaymentSystem.dto.response.UserWalletsResponse;
+import com.example.PaymentSystem.service.AuditLogService;
 import com.example.PaymentSystem.service.LedgerService;
+import com.example.PaymentSystem.service.TransactionService;
 import com.example.PaymentSystem.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,8 @@ public class AdminController {
 
     private final WalletService walletService;
     private final LedgerService ledgerService;
+    private final TransactionService transactionService;
+    private final AuditLogService auditLogService;
 
     // ── Deposit ─────────────────────────────────────────────────────────────
 
@@ -81,5 +87,20 @@ public class AdminController {
                 "balanced", balanced
         ));
     }
+
+    // ── Transaction History ─────────────────────────────────────────────────
+
+    @GetMapping("/transactions")
+    public ResponseEntity<List<TransactionResponse>> getAllTransactions() {
+        return ResponseEntity.ok(transactionService.getAllTransactions());
+    }
+
+    // ── All Audit Logs ──────────────────────────────────────────────────────
+
+    @GetMapping("/audit")
+    public ResponseEntity<List<AuditLogResponse>> getAllAuditLogs() {
+        return ResponseEntity.ok(auditLogService.getAllLogs());
+    }
 }
+
 

@@ -54,4 +54,14 @@ export const reconcileAPI = {
     api.get(`/admin/transactions/${transactionId}/verify`),
 };
 
+export const transactionHistoryAPI = {
+  getAll: () =>
+    api.get('/admin/transactions'),
+};
+
+export const allAuditAPI = {
+  getAll: () =>
+    api.get('/admin/audit'),
+};
+
 export default api;

@@ -355,6 +355,11 @@ a:hover {
   cursor: pointer;
   outline: none;
   transition: all var(--transition-fast);
+  color-scheme: dark;
+}
+.form-select option {
+  background: #1e293b;
+  color: #f1f5f9;
 }
 .form-select:focus {
   border-color: var(--color-primary);
