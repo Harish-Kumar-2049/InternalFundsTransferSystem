@@ -4,11 +4,12 @@ interface AuthUser {
   email: string;
   role: string;
   token: string;
+  userId: string;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (token: string, email: string, role: string) => void;
+  login: (token: string, email: string, role: string, userId: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -37,31 +38,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore session from localStorage on mount
   useEffect(() => {
-    const token = localStorage.getItem('jwt_token');
-    const email = localStorage.getItem('jwt_email');
-    const role = localStorage.getItem('jwt_role');
+    const token  = localStorage.getItem('jwt_token');
+    const email  = localStorage.getItem('jwt_email');
+    const role   = localStorage.getItem('jwt_role');
+    const userId = localStorage.getItem('jwt_userId') ?? '';
 
     if (token && email && role && !isTokenExpired(token)) {
-      setUser({ token, email, role });
+      setUser({ token, email, role, userId });
     } else {
       // Clear stale data
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('jwt_email');
       localStorage.removeItem('jwt_role');
+      localStorage.removeItem('jwt_userId');
     }
   }, []);
 
-  const login = (token: string, email: string, role: string) => {
-    localStorage.setItem('jwt_token', token);
-    localStorage.setItem('jwt_email', email);
-    localStorage.setItem('jwt_role', role);
-    setUser({ token, email, role });
+  const login = (token: string, email: string, role: string, userId: string) => {
+    localStorage.setItem('jwt_token',  token);
+    localStorage.setItem('jwt_email',  email);
+    localStorage.setItem('jwt_role',   role);
+    localStorage.setItem('jwt_userId', userId);
+    setUser({ token, email, role, userId });
   };
 
   const logout = () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('jwt_email');
     localStorage.removeItem('jwt_role');
+    localStorage.removeItem('jwt_userId');
     setUser(null);
   };
 

@@ -38,4 +38,20 @@ export const adminAPI = {
     api.get(`/admin/users/lookup?query=${query}`),
 };
 
+export const ledgerAPI = {
+  getByWallet: (walletId: string) =>
+    api.get(`/admin/ledger/wallet/${walletId}`),
+
+  getByTransaction: (transactionId: string) =>
+    api.get(`/admin/ledger/transaction/${transactionId}`),
+};
+
+export const reconcileAPI = {
+  runAll: () =>
+    api.post('/admin/reconcile'),
+
+  verifyTransaction: (transactionId: string) =>
+    api.get(`/admin/transactions/${transactionId}/verify`),
+};
+
 export default api;

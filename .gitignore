@@ -31,9 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-# Local npm lockfiles created by running `npm install` in the frontend projects.
-# We keep them locally but don't want to push them from the migration branch.
-/frontend-admin/package-lock.json
-/frontend-user/package-lock.json
-

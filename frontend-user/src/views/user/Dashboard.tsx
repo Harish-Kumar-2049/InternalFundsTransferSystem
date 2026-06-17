@@ -22,6 +22,7 @@ export default function UserDashboard() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [copiedId, setCopiedId] = useState(false);
 
   // Transfer modal
   const [showTransfer, setShowTransfer] = useState(false);
@@ -147,6 +148,32 @@ export default function UserDashboard() {
          <p className="page-header__subtitle">
            Welcome back, {user?.email}
          </p>
+         {user?.userId && (
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
+             <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>User ID:</span>
+             <button
+               id="copy-user-id"
+               title="Click to copy User ID"
+               onClick={() => {
+                 navigator.clipboard.writeText(user.userId);
+                 setCopiedId(true);
+                 setTimeout(() => setCopiedId(false), 1500);
+               }}
+               style={{
+                 display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                 fontSize: '0.78rem', fontFamily: 'monospace',
+                 backgroundColor: copiedId ? 'rgba(34,197,94,0.15)' : 'rgba(59,130,246,0.1)',
+                 color: copiedId ? '#22c55e' : 'var(--color-primary)',
+                 border: `1px solid ${copiedId ? 'rgba(34,197,94,0.4)' : 'rgba(59,130,246,0.3)'}`,
+                 borderRadius: '20px', padding: '2px 10px',
+                 cursor: 'pointer', transition: 'all 0.2s ease',
+               }}
+             >
+               {copiedId ? '✓ Copied!' : `${user.userId.slice(0, 8)}…${user.userId.slice(-4)}`}
+               {!copiedId && <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>📋</span>}
+             </button>
+           </div>
+         )}
        </div>
  
        {error && <div className="alert alert--error">⚠ {error}</div>}

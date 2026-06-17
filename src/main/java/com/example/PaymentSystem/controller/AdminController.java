@@ -1,8 +1,10 @@
 package com.example.PaymentSystem.controller;
 
+import com.example.PaymentSystem.dto.response.LedgerEntryResponse;
+import com.example.PaymentSystem.dto.response.ReconcileEntryResponse;
 import com.example.PaymentSystem.dto.response.UserWalletsResponse;
+import com.example.PaymentSystem.service.LedgerService;
 import com.example.PaymentSystem.service.WalletService;
-import com.example.PaymentSystem.service.ReconciliationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,7 +25,9 @@ import java.util.UUID;
 public class AdminController {
 
     private final WalletService walletService;
-    private final ReconciliationService reconciliationService;
+    private final LedgerService ledgerService;
+
+    // ── Deposit ─────────────────────────────────────────────────────────────
 
     @PostMapping("/wallets/{walletId}/deposit")
     public ResponseEntity<Map<String, String>> deposit(
@@ -36,17 +41,45 @@ public class AdminController {
         ));
     }
 
+    // ── User Lookup ─────────────────────────────────────────────────────────
+
     @GetMapping("/users/lookup")
     public ResponseEntity<UserWalletsResponse> lookupUserWallets(
             @RequestParam String query) {
         return ResponseEntity.ok(walletService.lookupUserWallets(query));
     }
 
+    // ── Ledger Explorer ─────────────────────────────────────────────────────
+
+    @GetMapping("/ledger/wallet/{walletId}")
+    public ResponseEntity<List<LedgerEntryResponse>> getLedgerByWallet(
+            @PathVariable UUID walletId) {
+        return ResponseEntity.ok(ledgerService.getEntriesByWallet(walletId));
+    }
+
+    @GetMapping("/ledger/transaction/{transactionId}")
+    public ResponseEntity<List<LedgerEntryResponse>> getLedgerByTransaction(
+            @PathVariable UUID transactionId) {
+        return ResponseEntity.ok(ledgerService.getEntriesByTransaction(transactionId));
+    }
+
+    // ── Reconcile ───────────────────────────────────────────────────────────
+
     @PostMapping("/reconcile")
-    public ResponseEntity<Map<String, String>> triggerReconciliation() {
-        reconciliationService.reconcileNow();
+    public ResponseEntity<List<ReconcileEntryResponse>> reconcileAll() {
+        return ResponseEntity.ok(ledgerService.reconcileAll());
+    }
+
+    // ── Verify Transaction ──────────────────────────────────────────────────
+
+    @GetMapping("/transactions/{transactionId}/verify")
+    public ResponseEntity<Map<String, Object>> verifyTransaction(
+            @PathVariable UUID transactionId) {
+        boolean balanced = ledgerService.verifyTransaction(transactionId);
         return ResponseEntity.ok(Map.of(
-                "message", "Reconciliation completed — check logs"));
+                "transactionId", transactionId.toString(),
+                "balanced", balanced
+        ));
     }
 }
 

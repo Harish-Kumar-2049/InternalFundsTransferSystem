@@ -18,7 +18,7 @@ export default function UserLogin() {
 
     try {
       const res = await authAPI.login({ email, password });
-      const { token, email: userEmail, role } = res.data;
+      const { token, email: userEmail, role, userId } = res.data;
 
       if (role === 'ADMIN') {
         setError('Admins must log in through the Admin Portal.');
@@ -26,7 +26,7 @@ export default function UserLogin() {
         return;
       }
 
-      login(token, userEmail, role);
+      login(token, userEmail, role, userId ?? '');
       navigate('/dashboard');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
