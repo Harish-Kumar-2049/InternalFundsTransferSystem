@@ -36,6 +36,7 @@ public class TransactionService {
     private final AuditLogService auditLogService;
     private final IdempotencyService idempotencyService;
     private final com.example.PaymentSystem.event.PaymentEventPublisher paymentEventPublisher;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
     public TransactionResponse transfer(TransferRequest request, UUID initiatedByUserId) {
@@ -98,16 +99,16 @@ public class TransactionService {
             saved.setStatus(TransactionStatus.PENDING);
             transactionRepository.save(saved);
 
-            // ---------------------------------------------------------------
-            // DEADLOCK-SAFE PESSIMISTIC LOCKING
-            // Lock both wallets in a consistent, deterministic order (smaller
-            // UUID first). If two concurrent transfers go in opposite directions
-            // (A→B and B→A) and each locked in arrival order, they would
-            // deadlock waiting for each other. Sorting by UUID guarantees both
-            // threads always request the locks in the same sequence, so one
-            // will always proceed while the other waits — never a cycle.
-            // PostgreSQL translates each lock to: SELECT * FROM wallets WHERE id = ? FOR UPDATE
-            // ---------------------------------------------------------------
+            // Flush pending changes (like the transaction PENDING status) to DB.
+            // Clear the 1st-level cache before locking.
+            // This forces Hibernate to throw away the stale wallet objects fetched
+            // earlier without a lock, ensuring the lock queries fetch absolutely
+            // fresh data from the DB. Without this, Hibernate serves the cached
+            // (stale) balance even after acquiring the row lock — causing a
+            // silent lost-update bug where the balance arithmetic runs on old data.
+            entityManager.flush();
+            entityManager.clear();
+
             UUID firstLockId  = source.getId().compareTo(target.getId()) < 0
                     ? source.getId() : target.getId();
             UUID secondLockId = source.getId().compareTo(target.getId()) < 0
@@ -183,6 +184,8 @@ public class TransactionService {
         // the original transfer (source → target). Without ordered locking a
         // concurrent original-direction transfer and this refund would deadlock.
         // We apply the same UUID-sorted lock acquisition used in transfer().
+        entityManager.flush();
+        entityManager.clear();
         UUID refundFirstLockId  = original.getTargetWallet().getId()
                 .compareTo(original.getSourceWallet().getId()) < 0
                 ? original.getTargetWallet().getId()
