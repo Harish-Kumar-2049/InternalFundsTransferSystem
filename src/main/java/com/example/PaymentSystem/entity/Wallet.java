@@ -52,13 +52,13 @@ public class Wallet {
     @Column(nullable = false, name = "is_primary", columnDefinition = "boolean default false")
     private boolean isPrimary = false;
 
-    @OneToMany(mappedBy = "sourceWallet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "sourceWallet")
     private List<Transaction> outgoingTransactions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "targetWallet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "targetWallet")
     private List<Transaction> incomingTransactions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "wallet")
     private List<LedgerEntry> ledgerEntries = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
