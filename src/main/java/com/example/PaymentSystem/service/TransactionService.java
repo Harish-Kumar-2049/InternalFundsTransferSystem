@@ -14,7 +14,7 @@ import com.example.PaymentSystem.exception.ResourceNotFoundException;
 import com.example.PaymentSystem.repository.TransactionRepository;
 import com.example.PaymentSystem.repository.UserRepository;
 import com.example.PaymentSystem.repository.WalletRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -96,6 +96,26 @@ public class TransactionService {
             saved.setStatus(TransactionStatus.PENDING);
             transactionRepository.save(saved);
 
+            // ---------------------------------------------------------------
+            // DEADLOCK-SAFE PESSIMISTIC LOCKING
+            // Lock both wallets in a consistent, deterministic order (smaller
+            // UUID first). If two concurrent transfers go in opposite directions
+            // (A→B and B→A) and each locked in arrival order, they would
+            // deadlock waiting for each other. Sorting by UUID guarantees both
+            // threads always request the locks in the same sequence, so one
+            // will always proceed while the other waits — never a cycle.
+            // PostgreSQL translates each lock to: SELECT * FROM wallets WHERE id = ? FOR UPDATE
+            // ---------------------------------------------------------------
+            UUID firstLockId  = source.getId().compareTo(target.getId()) < 0
+                    ? source.getId() : target.getId();
+            UUID secondLockId = source.getId().compareTo(target.getId()) < 0
+                    ? target.getId() : source.getId();
+            walletRepository.findByIdWithLock(firstLockId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Wallet not found during lock acquisition"));
+            walletRepository.findByIdWithLock(secondLockId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Wallet not found during lock acquisition"));
+            // Both rows are now exclusively locked for the rest of this transaction.
+
             walletService.debit(source.getId(), request.getAmount());
             walletService.credit(target.getId(), request.getAmount());
 
@@ -142,6 +162,24 @@ public class TransactionService {
         if (original.getStatus() != TransactionStatus.SUCCESS) {
             throw new IllegalStateException("Only successful transactions can be refunded");
         }
+
+        // A refund reverses target → source, which is the opposite direction of
+        // the original transfer (source → target). Without ordered locking a
+        // concurrent original-direction transfer and this refund would deadlock.
+        // We apply the same UUID-sorted lock acquisition used in transfer().
+        UUID refundFirstLockId  = original.getTargetWallet().getId()
+                .compareTo(original.getSourceWallet().getId()) < 0
+                ? original.getTargetWallet().getId()
+                : original.getSourceWallet().getId();
+        UUID refundSecondLockId = original.getTargetWallet().getId()
+                .compareTo(original.getSourceWallet().getId()) < 0
+                ? original.getSourceWallet().getId()
+                : original.getTargetWallet().getId();
+        walletRepository.findByIdWithLock(refundFirstLockId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found during refund lock"));
+        walletRepository.findByIdWithLock(refundSecondLockId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found during refund lock"));
+        // Both rows are now exclusively locked for the rest of this transaction.
 
         walletService.debit(original.getTargetWallet().getId(), original.getAmount());
         walletService.credit(original.getSourceWallet().getId(), original.getAmount());
